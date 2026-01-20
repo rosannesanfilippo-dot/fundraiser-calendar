@@ -7,7 +7,7 @@
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 10px;
-      max-width: 500px;
+      max-width: 600px;
     }
     .day {
       background: orange;
@@ -16,6 +16,7 @@
       text-align: center;
       cursor: pointer;
       font-weight: bold;
+      white-space: pre-line;
     }
     .taken {
       background: gray;
@@ -26,55 +27,59 @@
 <body>
 
 <h2>Pick a Date to Donate</h2>
+
 <div class="grid" id="calendar"></div>
 
 <script>
-const calendar = document.getElementById("calendar");
-const takenDates = new Set();
+  const calendar = document.getElementById("calendar");
+  const takenDates = new Map();
 
-// Load taken dates
-fetch("/.netlify/functions/getDates")
-  .then(res => res.json())
-  .then(records => {
-    records.forEach(r => {
-      takenDates.add(parseInt(r.fields.Date));
+  // Load taken dates from Airtable
+  fetch("/.netlify/functions/getDates")
+    .then(res => res.json())
+    .then(records => {
+      records.forEach(r => {
+        if (r.fields.Date) {
+          takenDates.set(parseInt(r.fields.Date), r.fields.Name || "");
+        }
+      });
+      renderCalendar();
     });
-    renderCalendar();
-  });
 
-function renderCalendar() {
-  for (let i = 1; i <= 31; i++) {
-    const div = document.createElement("div");
-    div.className = "day";
-    div.innerText = i;
+  function renderCalendar() {
+    for (let i = 1; i <= 31; i++) {
+      const div = document.createElement("div");
+      div.className = "day";
 
-    if (takenDates.has(i)) {
-      div.classList.add("taken");
-    } else {
+      if (takenDates.has(i)) {
+        const name = takenDates.get(i);
+        div.classList.add("taken");
+        div.innerText = `${i}\n${name}`;
+      } else {
+        div.innerText = i;
+        div.onclick = async () => {
+          const name = prompt("Enter your name");
+          if (!name) return;
 
-      div.onclick = async () => {
-  const name = prompt("Enter your name");
-  if (!name) return;
+          const res = await fetch("/.netlify/functions/bookDate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: i, name })
+          });
 
-  const res = await fetch("/.netlify/functions/bookDate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ date: i, name })
-  });
+          if (res.ok) {
+            div.classList.add("taken");
+            div.innerText = `${i}\n${name}`;
+          } else {
+            const msg = await res.text();
+            alert(msg || "Sorry, that date is already taken.");
+          }
+        };
+      }
 
-  if (res.ok) {
-    div.classList.add("taken");
-    div.innerText = `${i}\n${name}`;
-  } else {
-    const msg = await res.text();
-    alert(msg || "Sorry, that date is already taken.");
-  }
-};
+      calendar.appendChild(div);
     }
-
-    calendar.appendChild(div);
   }
-}
 </script>
 
 </body>
