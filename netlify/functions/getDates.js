@@ -1,37 +1,38 @@
 const fetch = require("node-fetch");
 
 exports.handler = async () => {
-  const token = process.env.AIRTABLE_TOKEN;
-  const baseId = process.env.AIRTABLE_BASE_ID;
+  try {
+    const baseId = process.env.AIRTABLE_BASE_ID;
+    const token = process.env.AIRTABLE_TOKEN;
+    const tableName = encodeURIComponent("Dates");
 
-  if (!token || !baseId) {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${tableName}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      return {
+        statusCode: 500,
+        body: `Airtable error: ${err}`
+      };
+    }
+
+    const data = await res.json();
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data.records)
+    };
+  } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Missing env variables",
-        tokenExists: !!token,
-        baseIdExists: !!baseId
-      })
+      body: err.message
     };
   }
-
-  const url = `https://api.airtable.com/v0/${baseId}/Dates`;
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    return {
-      statusCode: response.status,
-      body: JSON.stringify({ error: data.error })
-    };
-  }
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(data.records)
-  };
 };
