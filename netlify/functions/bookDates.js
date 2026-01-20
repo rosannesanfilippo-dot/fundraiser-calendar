@@ -2,12 +2,38 @@ const fetch = require("node-fetch");
 
 exports.handler = async (event) => {
   try {
-    const { date, name } = JSON.parse(event.body);
+    // Only accept POST requests
+    if (event.httpMethod !== "POST") {
+      return {
+        statusCode: 405,
+        body: "Method not allowed. Use POST."
+      };
+    }
+
+    // Handle missing body
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: "Missing request body."
+      };
+    }
+
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (err) {
+      return {
+        statusCode: 400,
+        body: "Invalid JSON."
+      };
+    }
+
+    const { date, name } = body;
 
     if (!date || !name) {
       return {
         statusCode: 400,
-        body: "Missing date or name"
+        body: "Missing date or name."
       };
     }
 
@@ -15,7 +41,7 @@ exports.handler = async (event) => {
     const token = process.env.AIRTABLE_TOKEN;
     const tableName = encodeURIComponent("Dates");
 
-    // 🔎 Check if date already exists
+    // Check if date exists
     const checkUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(
       `{Date}="${date}"`
     )}`;
@@ -29,11 +55,11 @@ exports.handler = async (event) => {
     if (checkData.records && checkData.records.length > 0) {
       return {
         statusCode: 409,
-        body: "Date already taken"
+        body: "Date already taken."
       };
     }
 
-    // ✅ Create new record
+    // Create new record
     const createRes = await fetch(
       `https://api.airtable.com/v0/${baseId}/${tableName}`,
       {
