@@ -1,18 +1,31 @@
 const fetch = require("node-fetch");
 
 exports.handler = async () => {
-  const baseId = process.env.AIRTABLE_BASE_ID;
+  try {
+    const baseId = process.env.AIRTABLE_BASE_ID;
+    const url = `https://api.airtable.com/v0/${baseId}/Dates`;
 
-  const url = `https://api.airtable.com/v0/${appSQJLAwJmHXVDEQ}/Dates`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}` }
+    });
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}` }
-  });
+    const data = await response.json();
 
-  const data = await response.json();
+    if (!response.ok) {
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: data.error })
+      };
+    }
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify(data.records)
-  };
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data.records)
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
 };
