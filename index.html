@@ -51,23 +51,25 @@ function renderCalendar() {
     if (takenDates.has(i)) {
       div.classList.add("taken");
     } else {
+
       div.onclick = async () => {
-        const name = prompt("Enter your name");
-        if (!name) return;
+  const name = prompt("Enter your name");
+  if (!name) return;
 
-        const res = await fetch("/.netlify/functions/bookDate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: i, name })
-        });
+  const res = await fetch("/.netlify/functions/bookDate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: i, name })
+  });
 
-        if (res.ok) {
-          div.classList.add("taken");
-          div.innerText = `${i}\n${name}`;
-        } else {
-          alert("Sorry, that date is already taken.");
-        }
-      };
+  if (res.ok) {
+    div.classList.add("taken");
+    div.innerText = `${i}\n${name}`;
+  } else {
+    const msg = await res.text();
+    alert(msg || "Sorry, that date is already taken.");
+  }
+};
     }
 
     calendar.appendChild(div);
