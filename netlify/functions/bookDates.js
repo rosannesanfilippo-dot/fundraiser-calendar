@@ -5,7 +5,7 @@ exports.handler = async (event) => {
 
   const baseId = process.env.AIRTABLE_BASE_ID;
 
-  const url = `https://api.airtable.com/v0/${baseId}/Dates`;
+  const url = `https://api.airtable.com/v0/${appSQJLAwJmHXVDEQ}/Dates`;
 
   const response = await fetch(url, {
     method: "POST",
