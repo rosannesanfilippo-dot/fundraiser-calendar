@@ -2,7 +2,6 @@ const fetch = require("node-fetch");
 
 exports.handler = async (event) => {
   try {
-    // Only accept POST requests
     if (event.httpMethod !== "POST") {
       return {
         statusCode: 405,
@@ -10,7 +9,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // Handle missing body
     if (!event.body) {
       return {
         statusCode: 400,
@@ -81,13 +79,13 @@ exports.handler = async (event) => {
       const err = await createRes.text();
       return {
         statusCode: 500,
-        body: err
+        body: `Airtable error: ${err}`
       };
     }
 
     return {
       statusCode: 200,
-      body: "Booked"
+      body: "Booked successfully!"
     };
   } catch (err) {
     return {
