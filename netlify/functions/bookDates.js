@@ -1,27 +1,40 @@
 const fetch = require("node-fetch");
 
 exports.handler = async (event) => {
-  const { date, name } = JSON.parse(event.body);
+  try {
+    const { date, name } = JSON.parse(event.body);
 
-  const baseId = process.env.AIRTABLE_BASE_ID;
+    const baseId = process.env.AIRTABLE_BASE_ID;
+    const url = `https://api.airtable.com/v0/${baseId}/Dates`;
 
-  const url = `https://api.airtable.com/v0/${appSQJLAwJmHXVDEQ}/Dates`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        fields: { Date: date, Name: name }
+      })
+    });
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      fields: { Date: date, Name: name }
-    })
-  });
+    const data = await response.json();
 
-  const data = await response.json();
+    if (!response.ok) {
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: data.error })
+      };
+    }
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify(data)
-  };
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data)
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
 };
