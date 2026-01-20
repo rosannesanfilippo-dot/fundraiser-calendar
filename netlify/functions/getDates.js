@@ -9,7 +9,18 @@ exports.handler = async () => {
       headers: { Authorization: `Bearer ${process.env.AIRTABLE_TOKEN}` }
     });
 
-    const data = await response.json();
+    const text = await response.text(); // Read raw response
+
+    // Try to parse JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Invalid JSON from Airtable", raw: text })
+      };
+    }
 
     if (!response.ok) {
       return {
