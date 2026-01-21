@@ -34,7 +34,14 @@
 const calendar = document.getElementById("calendar");
 
 async function loadDates() {
-  const res = await fetch("/.netlify/functions/getDates");
+  let res;
+  try {
+    res = await fetch("/.netlify/functions/getDates");
+  } catch (err) {
+    alert("Failed to load calendar.");
+    return;
+  }
+
   if (!res.ok) {
     alert("Failed to load calendar.");
     return;
@@ -76,7 +83,7 @@ async function loadDates() {
         let donation = prompt("Enter your donation amount (number)");
         donation = Number(donation);
         if (!donation || donation <= 0) {
-          alert("Please enter a valid donation amount.");
+          alert("Please enter a valid donation amount greater than 0.");
           div.onclick = handleClick;
           return;
         }
@@ -92,17 +99,18 @@ async function loadDates() {
           });
 
           if (res.ok) {
+            const data = await res.json();
             div.classList.add("taken");
             div.innerText = `${i}\n${name}\n$${donation}`;
           } else {
             const msg = await res.text();
             alert("Booking failed: " + msg);
-            div.innerText = i; // reset
+            div.innerText = i;
             div.onclick = handleClick;
           }
         } catch (err) {
           alert("Server error. Try again.");
-          div.innerText = i; // reset
+          div.innerText = i;
           div.onclick = handleClick;
         }
       };
