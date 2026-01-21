@@ -17,6 +17,7 @@
       cursor: pointer;
       font-weight: bold;
       white-space: pre-line;
+      transition: background 0.2s;
     }
     .taken {
       background: gray;
@@ -27,58 +28,91 @@
 <body>
 
 <h2>Pick a Date to Donate</h2>
-
 <div class="grid" id="calendar"></div>
 
 <script>
-  const calendar = document.getElementById("calendar");
+const calendar = document.getElementById("calendar");
 
-  async function loadDates() {
-    const res = await fetch("/.netlify/functions/getDates");
-    const records = await res.json();
-    
-    const taken = new Map();
-     records.forEach(r => {
-  if (r.fields.date) {
-    taken.set(parseInt(r.fields.date), r.fields.name || "");
+async function loadDates() {
+  const res = await fetch("/.netlify/functions/getDates");
+  if (!res.ok) {
+    alert("Failed to load calendar.");
+    return;
   }
-});
 
-    for (let i = 1; i <= 31; i++) {
-      const div = document.createElement("div");
-      div.className = "day";
+  const records = await res.json();
+  const taken = new Map();
+
+  // Map booked dates
+  records.forEach(r => {
+    if (r.fields.date) {
+      taken.set(parseInt(r.fields.date), {
+        name: r.fields.name || "",
+        donation: r.fields.donation || 0
+      });
+    }
+  });
+
+  for (let i = 1; i <= 31; i++) {
+    const div = document.createElement("div");
+    div.className = "day";
+
+    if (taken.has(i)) {
+      const booked = taken.get(i);
+      div.classList.add("taken");
+      div.innerText = `${i}\n${booked.name}\n$${booked.donation}`;
+    } else {
       div.innerText = i;
 
-      if (taken.has(i)) {
-        div.classList.add("taken");
-        div.innerText = `${i}\n${taken.get(i)}`;
-      } else {
-        div.onclick = async () => {
-          const name = prompt("Enter your name");
-          if (!name) return;
+      div.onclick = async function handleClick() {
+        div.onclick = null; // prevent double click
 
-          // ⚠️ This must be POST
+        const name = prompt("Enter your name");
+        if (!name) {
+          div.onclick = handleClick;
+          return;
+        }
+
+        let donation = prompt("Enter your donation amount (number)");
+        donation = Number(donation);
+        if (!donation || donation <= 0) {
+          alert("Please enter a valid donation amount.");
+          div.onclick = handleClick;
+          return;
+        }
+
+        // Show temporary loading
+        div.innerText = "⏳";
+
+        try {
           const res = await fetch("/.netlify/functions/bookDate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ date: i, name })
+            body: JSON.stringify({ date: i, name, donation })
           });
 
           if (res.ok) {
             div.classList.add("taken");
-            div.innerText = `${i}\n${name}`;
+            div.innerText = `${i}\n${name}\n$${donation}`;
           } else {
             const msg = await res.text();
-            alert(msg);
+            alert("Booking failed: " + msg);
+            div.innerText = i; // reset
+            div.onclick = handleClick;
           }
-        };
-      }
-
-      calendar.appendChild(div);
+        } catch (err) {
+          alert("Server error. Try again.");
+          div.innerText = i; // reset
+          div.onclick = handleClick;
+        }
+      };
     }
-  }
 
-  loadDates();
+    calendar.appendChild(div);
+  }
+}
+
+loadDates();
 </script>
 
 </body>
