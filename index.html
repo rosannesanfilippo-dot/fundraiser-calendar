@@ -1,26 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GBL Fundraiser! Pick a Date to Donate</title>
+  <title>Pick a Date to Donate</title>
   <style>
+    body {
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #d35400;
+      margin-bottom: 20px;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
+      gap: 15px;
       max-width: 600px;
+      margin: 0 auto;
     }
+
     .day {
-      background: orange;
+      width: 60px;
+      height: 60px;
+      background-image: url('https://d1b2lnesusyixt.cloudfront.net/wp-content/uploads/sites/70/2026/01/basketball.png');
+      background-size: cover;
+      background-position: center;
       border-radius: 50%;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
       font-weight: bold;
-      white-space: pre-line;
-      transition: background 0.2s;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1.2;
+      text-align: center;
+      user-select: none;
+      transition: transform 0.2s;
     }
+
+    .day:hover {
+      transform: scale(1.1);
+    }
+
     .taken {
-      background: gray;
+      filter: grayscale(100%);
       cursor: not-allowed;
     }
   </style>
@@ -28,6 +57,7 @@
 <body>
 
 <h2>Pick a Date to Donate</h2>
+
 <div class="grid" id="calendar"></div>
 
 <script>
@@ -36,21 +66,20 @@ const calendar = document.getElementById("calendar");
 async function loadDates() {
   let res;
   try {
-    res = await fetch("/.netlify/functions/getDates");
+    res = await fetch("https://fundraiser-calendar.netlify.app/.netlify/functions/getDates");
   } catch (err) {
-    alert("Failed to load calendar.");
+    calendar.innerHTML = "<p>Failed to load calendar.</p>";
     return;
   }
 
   if (!res.ok) {
-    alert("Failed to load calendar.");
+    calendar.innerHTML = "<p>Failed to load calendar.</p>";
     return;
   }
 
   const records = await res.json();
   const taken = new Map();
 
-  // Map booked dates
   records.forEach(r => {
     if (r.fields.date) {
       taken.set(parseInt(r.fields.date), {
@@ -59,6 +88,8 @@ async function loadDates() {
       });
     }
   });
+
+  calendar.innerHTML = "";
 
   for (let i = 1; i <= 31; i++) {
     const div = document.createElement("div");
@@ -70,36 +101,24 @@ async function loadDates() {
       div.innerText = `${i}\n${booked.name}\n$${booked.donation}`;
     } else {
       div.innerText = i;
-
       div.onclick = async function handleClick() {
-        div.onclick = null; // prevent double click
-
+        div.onclick = null;
         const name = prompt("Enter your name");
-        if (!name) {
-          div.onclick = handleClick;
-          return;
-        }
-
-        let donation = prompt("Enter your donation amount (number)");
+        if (!name) { div.onclick = handleClick; return; }
+        let donation = prompt("Enter donation amount");
         donation = Number(donation);
-        if (!donation || donation <= 0) {
-          alert("Please enter a valid donation amount greater than 0.");
-          div.onclick = handleClick;
-          return;
-        }
+        if (!donation || donation <= 0) { alert("Enter valid donation"); div.onclick = handleClick; return; }
 
-        // Show temporary loading
         div.innerText = "⏳";
 
         try {
-          const res = await fetch("/.netlify/functions/bookDate", {
+          const res = await fetch("https://fundraiser-calendar.netlify.app/.netlify/functions/bookDate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ date: i, name, donation })
           });
 
           if (res.ok) {
-            const data = await res.json();
             div.classList.add("taken");
             div.innerText = `${i}\n${name}\n$${donation}`;
           } else {
@@ -113,7 +132,7 @@ async function loadDates() {
           div.innerText = i;
           div.onclick = handleClick;
         }
-      };
+      }
     }
 
     calendar.appendChild(div);
