@@ -38,7 +38,7 @@ exports.handler = async (event) => {
 
     const baseId = process.env.AIRTABLE_BASE_ID;
     const token = process.env.AIRTABLE_TOKEN;
-    const tableName = encodeURIComponent("Dates");
+    const tableName = encodeURIComponent("Dates"); // Make sure your table is named exactly "Dates"
 
     // Check if date already exists
     const checkUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(
@@ -71,7 +71,7 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           fields: {
-            date: date,
+            date: date, // make sure Airtable column "date" is Number type for this
             name: name
           }
         })
@@ -79,6 +79,15 @@ exports.handler = async (event) => {
     );
 
     const createData = await createRes.json();
+
+    // Check if Airtable accepted the record
+    if (!createRes.ok) {
+      console.error("Airtable create error:", createData);
+      return {
+        statusCode: 500,
+        body: JSON.stringify(createData)
+      };
+    }
 
     return {
       statusCode: 200,
