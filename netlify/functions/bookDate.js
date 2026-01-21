@@ -42,7 +42,7 @@ exports.handler = async (event) => {
 
     // Check if date already exists
     const checkUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(
-      `{Date}="${date}"`
+      `{date}="${date}"`
     )}`;
 
     const checkRes = await fetch(checkUrl, {
@@ -71,8 +71,8 @@ exports.handler = async (event) => {
         },
         body: JSON.stringify({
           fields: {
-            Date: date,
-            Name: name
+            date: date,
+            name: name
           }
         })
       }
