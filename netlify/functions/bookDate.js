@@ -18,13 +18,13 @@ exports.handler = async (event) => {
     }
 
     const { date, name, donation } = body;
-    if (!date || !name || donation === undefined) {
-      return { statusCode: 400, body: "Missing date, name, or donation." };
+    if (!date || !name || donation === undefined || donation <= 0) {
+      return { statusCode: 400, body: "Missing or invalid date, name, or donation." };
     }
 
     const baseId = process.env.AIRTABLE_BASE_ID;
     const token = process.env.AIRTABLE_TOKEN;
-    const tableName = encodeURIComponent("Dates");
+    const tableName = encodeURIComponent("Dates"); // Ensure table is named "Dates"
 
     // Check if date already booked
     const checkUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(`{date}="${date}"`)}`;
@@ -43,7 +43,7 @@ exports.handler = async (event) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        fields: { date, name, donation }
+        fields: { date, name, donation } // donation is a number
       })
     });
 
@@ -55,6 +55,7 @@ exports.handler = async (event) => {
     }
 
     return { statusCode: 200, body: JSON.stringify(createData) };
+
   } catch (error) {
     console.error(error);
     return { statusCode: 500, body: "Server error." };
