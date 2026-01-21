@@ -36,13 +36,13 @@
   async function loadDates() {
     const res = await fetch("/.netlify/functions/getDates");
     const records = await res.json();
-
+    
     const taken = new Map();
-    records.forEach(r => {
-      if (r.fields.Date) {
-        taken.set(parseInt(r.fields.Date), r.fields.Name || "");
-      }
-    });
+     records.forEach(r => {
+  if (r.fields.date) {
+    taken.set(parseInt(r.fields.date), r.fields.name || "");
+  }
+});
 
     for (let i = 1; i <= 31; i++) {
       const div = document.createElement("div");
